@@ -20,6 +20,7 @@ const STORAGE_KEYS = {
   LOGS: 'kc_sync_logs_v1',
   RECONCILIATION: 'kc_reconciliations_v1',
   PROFILE: 'kc_user_profile_v1',
+  DEMO_CLEARED: 'kc_demo_cleared_v1',
 };
 
 // Seed realistic sample bank accounts
@@ -38,6 +39,7 @@ const SEED_ACCOUNTS: BankAccount[] = [
     lastKnownBankBalance: 28750000,
     lastSyncAt: new Date(Date.now() - 3600000 * 2).toISOString(),
     notes: 'Rekening utama penerimaan transfer pelanggan & operasional',
+    isDemo: true,
   },
   {
     id: 'acc_mandiri_1',
@@ -53,6 +55,7 @@ const SEED_ACCOUNTS: BankAccount[] = [
     lastKnownBankBalance: 14150000,
     lastSyncAt: new Date(Date.now() - 3600000 * 4).toISOString(),
     notes: 'Rekening pembayaran supplier & stok grosir',
+    isDemo: true,
   },
   {
     id: 'acc_bri_1',
@@ -68,6 +71,7 @@ const SEED_ACCOUNTS: BankAccount[] = [
     lastKnownBankBalance: 12430000,
     lastSyncAt: new Date(Date.now() - 3600000 * 8).toISOString(),
     notes: 'Rekening penerimaan QRIS kasir toko',
+    isDemo: true,
   },
   {
     id: 'acc_cash_1',
@@ -81,6 +85,7 @@ const SEED_ACCOUNTS: BankAccount[] = [
     isActive: true,
     color: '#10B981', // Emerald
     notes: 'Kas kecil operasional tunai harian',
+    isDemo: true,
   },
 ];
 
@@ -104,7 +109,8 @@ const SEED_TRANSACTIONS: Transaction[] = [
     rawEmailSnippet: 'Informasi transaksi pada rekening BCA Anda: Kredit Rp 3.500.000,00',
     category: 'Penjualan',
     status: 'verified',
-    createdMethod: 'gmail_sync',
+    createdMethod: 'simulator',
+    isDemo: true,
     createdAt: '2026-10-29T14:16:00',
     updatedAt: '2026-10-29T14:16:00',
   },
@@ -126,7 +132,8 @@ const SEED_TRANSACTIONS: Transaction[] = [
     rawEmailSnippet: 'Transaksi pembayaran listrik berhasil diproses: Debet Rp 450.000,00',
     category: 'Pembayaran Tagihan',
     status: 'verified',
-    createdMethod: 'gmail_sync',
+    createdMethod: 'simulator',
+    isDemo: true,
     createdAt: '2026-10-29T11:31:00',
     updatedAt: '2026-10-29T11:31:00',
   },
@@ -148,7 +155,8 @@ const SEED_TRANSACTIONS: Transaction[] = [
     rawEmailSnippet: 'Transfer berhasil ke PT SUPPLIER BAHAN BAKU Rp 1.850.000,00',
     category: 'Pembelian Barang',
     status: 'verified',
-    createdMethod: 'gmail_sync',
+    createdMethod: 'simulator',
+    isDemo: true,
     createdAt: '2026-10-28T09:22:00',
     updatedAt: '2026-10-28T09:22:00',
   },
@@ -170,7 +178,8 @@ const SEED_TRANSACTIONS: Transaction[] = [
     rawEmailSnippet: 'Pemberitahuan Transaksi Finansial BRI: Setoran / Kredit QRIS Rp 780.000,00',
     category: 'Penjualan',
     status: 'verified',
-    createdMethod: 'gmail_sync',
+    createdMethod: 'simulator',
+    isDemo: true,
     createdAt: '2026-10-28T16:46:00',
     updatedAt: '2026-10-28T16:46:00',
   },
@@ -189,7 +198,8 @@ const SEED_TRANSACTIONS: Transaction[] = [
     referenceNumber: 'TRF-BCA-MDR-001',
     category: 'Transfer Keluar',
     status: 'verified',
-    createdMethod: 'manual',
+    createdMethod: 'simulator',
+    isDemo: true,
     createdAt: '2026-10-27T15:01:00',
     updatedAt: '2026-10-27T15:01:00',
   },
@@ -205,7 +215,8 @@ const SEED_TRANSACTIONS: Transaction[] = [
     referenceNumber: 'KAS-20261027-02',
     category: 'Belanja Operasional',
     status: 'verified',
-    createdMethod: 'manual',
+    createdMethod: 'simulator',
+    isDemo: true,
     createdAt: '2026-10-27T17:35:00',
     updatedAt: '2026-10-27T17:35:00',
   },
@@ -245,13 +256,49 @@ class StorageManager {
 
   private init() {
     try {
+      const isDemoCleared = localStorage.getItem(STORAGE_KEYS.DEMO_CLEARED) === 'true';
+
       // Accounts
       const rawAccounts = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
-      this.accounts = rawAccounts ? JSON.parse(rawAccounts) : SEED_ACCOUNTS;
+      if (rawAccounts !== null) {
+        try {
+          const parsed = JSON.parse(rawAccounts);
+          this.accounts = isDemoCleared
+            ? parsed.filter((a: BankAccount) => !a.isDemo && !['acc_bca_1', 'acc_mandiri_1', 'acc_bri_1', 'acc_cash_1'].includes(a.id))
+            : parsed;
+        } catch {
+          this.accounts = isDemoCleared ? [] : [...SEED_ACCOUNTS];
+        }
+      } else {
+        this.accounts = isDemoCleared ? [] : [...SEED_ACCOUNTS];
+      }
 
       // Transactions
       const rawTx = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-      this.transactions = rawTx ? JSON.parse(rawTx) : SEED_TRANSACTIONS;
+      if (rawTx !== null) {
+        try {
+          const parsed = JSON.parse(rawTx);
+          this.transactions = isDemoCleared
+            ? parsed.filter((t: Transaction) => !t.isDemo && !t.id.startsWith('tx_seed_'))
+            : parsed;
+        } catch {
+          this.transactions = isDemoCleared ? [] : [...SEED_TRANSACTIONS];
+        }
+      } else {
+        this.transactions = isDemoCleared ? [] : [...SEED_TRANSACTIONS];
+      }
+
+      // Check if real transactions exist in loaded transactions:
+      const hasRealTransactions = this.transactions.some(
+        (t) => t.createdMethod === 'gmail_sync' && !t.isDemo && !t.id.startsWith('tx_seed_')
+      );
+      // If real transactions exist, automatically purge any leftover demo transactions!
+      if (hasRealTransactions) {
+        this.transactions = this.transactions.filter(
+          (t) => !t.isDemo && !t.id.startsWith('tx_seed_')
+        );
+        localStorage.setItem(STORAGE_KEYS.DEMO_CLEARED, 'true');
+      }
 
       // COA
       const rawCoa = localStorage.getItem(STORAGE_KEYS.COA);
@@ -279,13 +326,13 @@ class StorageManager {
       this.rebuildJournals();
       this.persistAll();
     } catch (err) {
-      console.error('Storage initialization failed, resetting to defaults', err);
-      this.accounts = [...SEED_ACCOUNTS];
-      this.transactions = [...SEED_TRANSACTIONS];
-      this.coa = [...DEFAULT_CHART_OF_ACCOUNTS];
-      this.rules = [...SEED_RULES];
-      this.rebuildJournals();
-      this.persistAll();
+      console.warn('Storage initialization notice:', err);
+      // NEVER overwrite user data with seed data in catch block!
+      if (!this.accounts) this.accounts = [];
+      if (!this.transactions) this.transactions = [];
+      if (!this.coa || this.coa.length === 0) this.coa = [...DEFAULT_CHART_OF_ACCOUNTS];
+      if (!this.rules) this.rules = [];
+      if (!this.journals) this.journals = [];
     }
   }
 
@@ -342,6 +389,13 @@ class StorageManager {
 
   public deleteAccount(id: string) {
     this.accounts = this.accounts.filter((a) => a.id !== id);
+    const hasRemainingDemo = this.accounts.some(
+      (a) => a.isDemo || ['acc_bca_1', 'acc_mandiri_1', 'acc_bri_1', 'acc_cash_1'].includes(a.id)
+    );
+    if (!hasRemainingDemo) {
+      localStorage.setItem(STORAGE_KEYS.DEMO_CLEARED, 'true');
+    }
+    this.rebuildJournals();
     this.persistAll();
     this.notify();
   }
@@ -391,6 +445,15 @@ class StorageManager {
   }
 
   public addTransactions(newTxs: Transaction[]) {
+    // If incoming transactions are from Gmail sync, auto-purge all demo seed transactions
+    const hasGmailTxs = newTxs.some((t) => t.createdMethod === 'gmail_sync');
+    if (hasGmailTxs) {
+      this.transactions = this.transactions.filter(
+        (t) => !t.isDemo && !t.id.startsWith('tx_seed_')
+      );
+      localStorage.setItem(STORAGE_KEYS.DEMO_CLEARED, 'true');
+    }
+
     // Check categorization rules automatically
     for (const tx of newTxs) {
       if (tx.category === 'Belum Dikategorikan') {
@@ -423,9 +486,54 @@ class StorageManager {
 
   public deleteTransaction(id: string) {
     this.transactions = this.transactions.filter((t) => t.id !== id);
+    const hasRemainingDemo = this.transactions.some(
+      (t) => t.isDemo || t.id.startsWith('tx_seed_')
+    );
+    if (!hasRemainingDemo) {
+      localStorage.setItem(STORAGE_KEYS.DEMO_CLEARED, 'true');
+    }
     this.rebuildJournals();
     this.persistAll();
     this.notify();
+  }
+
+  public deleteTransactions(ids: string[]) {
+    const idSet = new Set(ids);
+    this.transactions = this.transactions.filter((t) => !idSet.has(t.id));
+    const hasRemainingDemo = this.transactions.some(
+      (t) => t.isDemo || t.id.startsWith('tx_seed_')
+    );
+    if (!hasRemainingDemo) {
+      localStorage.setItem(STORAGE_KEYS.DEMO_CLEARED, 'true');
+    }
+    this.rebuildJournals();
+    this.persistAll();
+    this.notify();
+  }
+
+  /**
+   * Explicitly purge all demo/dummy accounts and transactions
+   */
+  public clearDemoData() {
+    this.transactions = this.transactions.filter(
+      (t) => !t.isDemo && !t.id.startsWith('tx_seed_')
+    );
+    this.accounts = this.accounts.filter(
+      (a) => !a.isDemo && !['acc_bca_1', 'acc_mandiri_1', 'acc_bri_1', 'acc_cash_1'].includes(a.id)
+    );
+    localStorage.setItem(STORAGE_KEYS.DEMO_CLEARED, 'true');
+    this.rebuildJournals();
+    this.persistAll();
+    this.notify();
+  }
+
+  public hasDemoData(): boolean {
+    return (
+      this.transactions.some((t) => t.isDemo || t.id.startsWith('tx_seed_')) ||
+      this.accounts.some(
+        (a) => a.isDemo || ['acc_bca_1', 'acc_mandiri_1', 'acc_bri_1', 'acc_cash_1'].includes(a.id)
+      )
+    );
   }
 
   // --- JOURNALS & COA ---

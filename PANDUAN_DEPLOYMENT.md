@@ -87,17 +87,17 @@ Netlify adalah alternatif populer yang sangat stabil dengan CDN global.
 Agar fitur **Koneksi Gmail API & Google Sign-In** dapat berfungsi pada domain baru Anda (di Vercel atau Netlify) tanpa kendala `auth/unauthorized-domain`, Anda perlu menambahkan domain Anda ke daftar domain resmi Firebase.
 
 ### Langkah-langkah:
-1. Buka [Firebase Console](https://console.firebase.google.com/).
-2. Masuk menggunakan akun Google Anda dan pilih project: **`gen-lang-client-0750668339`** (atau ID project Firebase Anda).
-3. Di menu sebelah kiri, klik **Build** -> **Authentication**.
-4. Pilih tab **Settings** (di sebelah tab Users).
-5. Gulir ke bagian **Authorized domains** (Domain resmi).
-6. Klik tombol **Add domain**.
-7. Masukkan domain baru Anda **tanpa** awalan `https://` dan tanpa garis miring di akhir.
-   - Contoh untuk Vercel: `keuangan-cerdas.vercel.app`
-   - Contoh untuk Netlify: `keuangan-cerdas.netlify.app`
-8. Klik **Add**.
-9. Selesai! Sekarang pengguna dapat langsung melakukan login Google dan sinkronisasi notifikasi email bank di situs produksi Anda.
+1. Buka tautan langsung ke pengaturan domain Firebase Anda:
+   **[https://console.firebase.google.com/project/gen-lang-client-0750668339/authentication/settings](https://console.firebase.google.com/project/gen-lang-client-0750668339/authentication/settings)**
+   *(Atau buka Firebase Console > Project: `gen-lang-client-0750668339` > **Build** > **Authentication** > Tab **Settings**)*.
+2. Gulir ke bagian **Authorized domains** (Domain resmi).
+3. Klik tombol **Add domain**.
+4. Masukkan nama domain deployment Anda **tanpa** `https://` dan tanpa tanda garis miring di belakang `/`.
+   - Contoh Vercel: `nama-aplikasi-anda.vercel.app`
+   - Contoh Netlify: `nama-aplikasi-anda.netlify.app`
+   - *(Jika menggunakan domain kustom sendiri seperti `keuangan.tokoanda.com`, masukkan domain tersebut)*
+5. Klik **Add**.
+6. Selesai! Kembali ke website Anda, refresh halaman, dan klik tombol Sinkronisasi kembali. Login Google dan pembacaan notifikasi bank akan berjalan dengan lancar.
 
 ---
 

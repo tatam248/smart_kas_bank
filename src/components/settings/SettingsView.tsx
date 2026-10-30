@@ -28,6 +28,7 @@ interface SettingsViewProps {
   onExportJSON: () => void;
   onImportJSON: (jsonStr: string) => boolean;
   onResetData: () => void;
+  onClearDemoData?: () => void;
   onDisconnectGmail: () => void;
 }
 
@@ -37,6 +38,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onExportJSON,
   onImportJSON,
   onResetData,
+  onClearDemoData,
   onDisconnectGmail,
 }) => {
   const [name, setName] = useState(profile.name);
@@ -209,9 +211,27 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             )}
 
+            {/* Bersihkan Data Demo Permanen */}
+            {onClearDemoData && (
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-semibold text-amber-800 block">Bersihkan Data Demo / Sampel</span>
+                  <span className="text-[10px] text-slate-400">Hapus permanen transaksi demo agar tidak muncul lagi saat refresh</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClearDemoData}
+                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Bersihkan Demo</span>
+                </button>
+              </div>
+            )}
+
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
               <div>
-                <span className="text-[11px] text-slate-500 block">Reset Data Demo</span>
+                <span className="text-[11px] text-slate-500 block">Reset ke Sampel Awal</span>
                 <span className="text-[10px] text-slate-400">Kembalikan ke akun & mutasi sampel UMKM awal</span>
               </div>
               <button

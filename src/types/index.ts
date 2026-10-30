@@ -14,6 +14,7 @@ export interface BankAccount {
   lastKnownBankBalance?: number;
   lastSyncAt?: string;
   notes?: string;
+  isDemo?: boolean;
 }
 
 export type TransactionType = 'income' | 'expense' | 'transfer';
@@ -40,6 +41,7 @@ export interface Transaction {
   category: string;
   status: VerificationStatus;
   createdMethod: 'gmail_sync' | 'manual' | 'simulator';
+  isDemo?: boolean;
   createdAt: string;
   updatedAt: string;
 }

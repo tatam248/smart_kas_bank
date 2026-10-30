@@ -66,6 +66,15 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
     if (error?.code === 'auth/popup-blocked') {
       throw new Error('Jendela popup diblokir oleh browser. Harap izinkan popup untuk masuk.');
     }
+    if (error?.code === 'auth/unauthorized-domain') {
+      const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'domain Anda';
+      const customErr: any = new Error(
+        `Domain "${currentHost}" belum didaftarkan di Firebase Console. Tambahkan domain ini ke daftar Authorized Domains di Firebase Authentication.`
+      );
+      customErr.code = 'auth/unauthorized-domain';
+      customErr.domain = currentHost;
+      throw customErr;
+    }
     console.error('Google Sign In error:', error);
     throw error;
   } finally {

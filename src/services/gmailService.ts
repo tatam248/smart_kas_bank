@@ -182,12 +182,58 @@ export async function syncBankEmailsFromGmail(
         }
       }
 
-      const accountId = targetAccount?.id || (bankAccounts[0]?.id ?? 'default_acc');
+      // If no bank account found, create a real account dynamically for this bank
+      if (!targetAccount) {
+        const newAccId = generateId(`acc_${parsed.bankName.toLowerCase().replace(/[^a-z0-9]/g, '')}`);
+        const brandColor = parsed.bankName.toLowerCase().includes('bca')
+          ? '#0066AE'
+          : parsed.bankName.toLowerCase().includes('mandiri')
+          ? '#0A3B82'
+          : parsed.bankName.toLowerCase().includes('bri')
+          ? '#00529C'
+          : parsed.bankName.toLowerCase().includes('bni')
+          ? '#E05A1F'
+          : '#2563EB';
+
+        const dynamicAccount: BankAccount = {
+          id: newAccId,
+          bankName: parsed.bankName,
+          accountHolder: userEmail.split('@')[0],
+          accountNumber: parsed.maskedAccount || 'XXXX',
+          maskedNumber: parsed.maskedAccount || 'Rekening Otomatis',
+          accountType: 'tabungan',
+          startingBalance: 0,
+          startDate: new Date().toISOString().split('T')[0],
+          isActive: true,
+          color: brandColor,
+          lastKnownBankBalance: parsed.balanceAfter,
+          lastSyncAt: new Date().toISOString(),
+          notes: 'Dibuat otomatis dari sinkronisasi notifikasi email bank Gmail',
+        };
+        targetAccount = dynamicAccount;
+        bankAccounts.push(dynamicAccount);
+      }
+
+      const accountId = targetAccount.id;
+
+      // Safe date resolver
+      let txDate = new Date().toISOString();
+      try {
+        const candidate = parsed.dateTime || dateHeader;
+        if (candidate) {
+          const d = new Date(candidate);
+          if (!isNaN(d.getTime())) {
+            txDate = d.toISOString();
+          }
+        }
+      } catch {
+        txDate = new Date().toISOString();
+      }
 
       const now = new Date().toISOString();
       const newTx: Transaction = {
         id: generateId('tx_gmail'),
-        date: parsed.dateTime || (dateHeader ? new Date(dateHeader).toISOString() : now),
+        date: txDate,
         bankAccountId: accountId,
         type: parsed.type,
         direction: parsed.direction,

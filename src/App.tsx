@@ -18,6 +18,7 @@ import { CategorizationRulesView } from './components/rules/CategorizationRulesV
 import { SettingsView } from './components/settings/SettingsView';
 import { RulePromptModal } from './components/common/RulePromptModal';
 import { ConfirmModal } from './components/common/ConfirmModal';
+import { UnauthorizedDomainModal } from './components/common/UnauthorizedDomainModal';
 import { storage } from './services/storage';
 import {
   initAuth,
@@ -34,6 +35,7 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncToast, setSyncToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
   const [isDisconnectModalOpen, setIsDisconnectModalOpen] = useState(false);
+  const [unauthorizedDomain, setUnauthorizedDomain] = useState<string | null>(null);
 
   // App Reactive State from Storage
   const [accounts, setAccounts] = useState<BankAccount[]>(() => storage.getAccounts());
@@ -110,7 +112,11 @@ export default function App() {
         showToast('Proses masuk Google dibatalkan.', 'info');
       }
     } catch (err: any) {
-      showToast(`Gagal menghubungkan Google: ${err.message || 'Izin dibatalkan'}`, 'error');
+      if (err?.code === 'auth/unauthorized-domain') {
+        setUnauthorizedDomain(err?.domain || (typeof window !== 'undefined' ? window.location.hostname : ''));
+      } else {
+        showToast(`Gagal menghubungkan Google: ${err.message || 'Izin dibatalkan'}`, 'error');
+      }
     }
   };
 
@@ -177,6 +183,8 @@ export default function App() {
         error?.code === 'auth/cancelled-popup-request'
       ) {
         showToast('Proses sinkronisasi dibatalkan oleh pengguna.', 'info');
+      } else if (error?.code === 'auth/unauthorized-domain') {
+        setUnauthorizedDomain(error?.domain || (typeof window !== 'undefined' ? window.location.hostname : ''));
       } else {
         console.error('Sync failed:', error);
         showToast(`Sinkronisasi: ${error.message || 'Periksa koneksi internet atau izin email'}`, 'error');
@@ -201,6 +209,12 @@ export default function App() {
       showToast(`Aturan otomatis untuk "${rulePrompt.keyword}" berhasil disimpan!`, 'success');
     }
     setRulePrompt({ isOpen: false, keyword: '', category: '' });
+  };
+
+  // Clear demo / sample dummy data permanently
+  const handleClearDemoData = () => {
+    storage.clearDemoData();
+    showToast('Seluruh data transaksi demo & rekening sampel berhasil dibersihkan secara permanen!', 'success');
   };
 
   // Export JSON backup
@@ -330,6 +344,11 @@ export default function App() {
                 storage.deleteTransaction(id);
                 showToast('Transaksi berhasil dihapus.', 'info');
               }}
+              onDeleteTransactions={(ids) => {
+                storage.deleteTransactions(ids);
+                showToast(`${ids.length} transaksi berhasil dihapus.`, 'info');
+              }}
+              onClearDemoData={handleClearDemoData}
               onRequestSaveRule={handleRequestSaveRule}
             />
           )}
@@ -381,6 +400,7 @@ export default function App() {
               }}
               onExportJSON={handleExportJSON}
               onImportJSON={(str) => storage.importDataJSON(str)}
+              onClearDemoData={handleClearDemoData}
               onResetData={() => {
                 storage.resetToDefault();
                 showToast('Data demo berhasil dipulihkan.', 'info');
@@ -420,6 +440,13 @@ export default function App() {
         isDestructive={true}
         onConfirm={handleConfirmDisconnectGmail}
         onCancel={() => setIsDisconnectModalOpen(false)}
+      />
+
+      {/* Unauthorized Domain Helper Modal for Production Deployments */}
+      <UnauthorizedDomainModal
+        isOpen={Boolean(unauthorizedDomain)}
+        domain={unauthorizedDomain || undefined}
+        onClose={() => setUnauthorizedDomain(null)}
       />
     </div>
   );

@@ -381,14 +381,31 @@ export function parseBankEmail(
   // 8. Extract Date & Time
   let dateTime = new Date().toISOString();
   // Look for Indonesian date pattern: DD/MM/YYYY or DD-MM-YYYY or DD Month YYYY
-  const dateMatch = fullText.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?)?/);
-  if (dateMatch) {
-    const day = dateMatch[1].padStart(2, '0');
-    const month = dateMatch[2].padStart(2, '0');
-    const year = dateMatch[3];
-    const hour = (dateMatch[4] || '12').padStart(2, '0');
-    const minute = (dateMatch[5] || '00').padStart(2, '0');
-    const second = (dateMatch[6] || '00').padStart(2, '0');
+  const dateMatch1 = fullText.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?)?/);
+  const monthNames = '(jan(?:uari)?|feb(?:ruari)?|mar(?:et)?|apr(?:il)?|mei|may|jun(?:i)?|jul(?:i)?|ag(?:u)?st(?:us)?|ags|agu|sep(?:tember)?|okt(?:ober)?|nov(?:ember)?|des(?:ember)?)';
+  const dateMatch2 = fullText.match(new RegExp(`(\\d{1,2})\\s+${monthNames}\\s+(\\d{4})(?:[\\s,]+(\\d{1,2})[:.](\\d{1,2})(?:[:.](\\d{1,2}))?)?`, 'i'));
+
+  if (dateMatch1) {
+    const day = dateMatch1[1].padStart(2, '0');
+    const month = dateMatch1[2].padStart(2, '0');
+    const year = dateMatch1[3];
+    const hour = (dateMatch1[4] || '12').padStart(2, '0');
+    const minute = (dateMatch1[5] || '00').padStart(2, '0');
+    const second = (dateMatch1[6] || '00').padStart(2, '0');
+    dateTime = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+  } else if (dateMatch2) {
+    const day = dateMatch2[1].padStart(2, '0');
+    const mStr = dateMatch2[2].toLowerCase();
+    const monthMap: Record<string, string> = {
+      jan: '01', februari: '02', feb: '02', maret: '03', mar: '03', april: '04', apr: '04',
+      mei: '05', may: '05', juni: '06', jun: '06', juli: '07', jul: '07', agustus: '08', agu: '08', ags: '08',
+      september: '09', sep: '09', oktober: '10', okt: '10', november: '11', nov: '11', desember: '12', des: '12'
+    };
+    const month = monthMap[mStr] || monthMap[mStr.substring(0, 3)] || '01';
+    const year = dateMatch2[3];
+    const hour = (dateMatch2[4] || '12').padStart(2, '0');
+    const minute = (dateMatch2[5] || '00').padStart(2, '0');
+    const second = (dateMatch2[6] || '00').padStart(2, '0');
     dateTime = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
   }
 

@@ -28,6 +28,8 @@ interface TransactionsViewProps {
   onAddTransaction: (tx: Transaction) => void;
   onUpdateTransaction: (tx: Transaction) => void;
   onDeleteTransaction: (id: string) => void;
+  onDeleteTransactions?: (ids: string[]) => void;
+  onClearDemoData?: () => void;
   onRequestSaveRule: (keyword: string, newCategory: string) => void;
   isAddModalOpenInitially?: boolean;
 }
@@ -60,6 +62,8 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
   onAddTransaction,
   onUpdateTransaction,
   onDeleteTransaction,
+  onDeleteTransactions,
+  onClearDemoData,
   onRequestSaveRule,
   isAddModalOpenInitially = false,
 }) => {
@@ -151,9 +155,13 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
   };
 
   const handleConfirmBulkDelete = () => {
-    selectedTxIds.forEach((id) => {
-      onDeleteTransaction(id);
-    });
+    if (onDeleteTransactions) {
+      onDeleteTransactions(Array.from(selectedTxIds));
+    } else {
+      selectedTxIds.forEach((id) => {
+        onDeleteTransaction(id);
+      });
+    }
     setSelectedTxIds(new Set());
     setIsBulkDeleteModalOpen(false);
   };
@@ -256,6 +264,35 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Demo / Sample Data Notification Banner */}
+      {transactions.some((t) => t.isDemo || t.id.startsWith('tx_seed_')) && (
+        <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs animate-in fade-in">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-300/40 flex items-center justify-center text-amber-700 shrink-0 mt-0.5 sm:mt-0">
+              <Info className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold text-amber-950 block">
+                Terdeteksi Data Sampel / Demo UMKM ({transactions.filter((t) => t.isDemo || t.id.startsWith('tx_seed_')).length} Transaksi)
+              </span>
+              <p className="text-amber-800 text-[11px] mt-0.5 leading-relaxed">
+                Data simulasi ini dapat dibersihkan permanen agar jurnal & laporan keuangan hanya menampilkan mutasi riil hasil sinkronisasi Gmail Anda.
+              </p>
+            </div>
+          </div>
+          {onClearDemoData && (
+            <button
+              type="button"
+              onClick={onClearDemoData}
+              className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl text-xs shadow-xs transition flex items-center justify-center gap-1.5 shrink-0"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Bersihkan Data Demo</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Filter & Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
