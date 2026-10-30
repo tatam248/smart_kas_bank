@@ -12,6 +12,12 @@ import {
   AlertTriangle,
   Server,
   Key,
+  Copy,
+  Check,
+  ExternalLink,
+  Globe,
+  Terminal,
+  Cloud,
 } from 'lucide-react';
 import { UserProfile } from '../../types';
 import { ConfirmModal } from '../common/ConfirmModal';
@@ -38,6 +44,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [deployTab, setDeployTab] = useState<'vercel' | 'netlify'>('vercel');
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2500);
+  };
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -264,20 +278,157 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </ul>
           </div>
 
-          {/* Guide 3 */}
-          <div className="space-y-2 p-4 bg-slate-50/70 rounded-xl border border-slate-200/70">
+          {/* Guide 3 - Interactive Deployment */}
+          <div className="space-y-3 p-4 bg-slate-50/70 rounded-xl border border-slate-200/70 md:col-span-1">
             <div className="flex items-center gap-2 text-indigo-900 font-bold">
               <Server className="w-4 h-4 text-indigo-700" />
-              <h3>3. Petunjuk Deployment Online</h3>
+              <h3>3. Siap Deploy Cloud (100% Gratis)</h3>
             </div>
             <p className="text-slate-600 leading-relaxed text-[11px]">
-              Aplikasi dibangun dengan arsitektur Vite + React SPA yang dapat di-deploy ke:
+              Telah dilengkapi file konfigurasi bawaan <code className="font-mono bg-slate-200 px-1 rounded text-[10px]">vercel.json</code>, <code className="font-mono bg-slate-200 px-1 rounded text-[10px]">netlify.toml</code>, dan <code className="font-mono bg-slate-200 px-1 rounded text-[10px]">_redirects</code> untuk mencegah error 404 pada rute SPA.
             </p>
-            <ul className="list-disc list-inside text-[11px] text-slate-700 space-y-0.5">
-              <li><strong>Vercel / Netlify:</strong> Cukup jalankan perintah <code className="bg-slate-200 px-1 rounded">npm run build</code></li>
-              <li><strong>Google Cloud Run:</strong> Terintegrasi langsung dengan GCP Service URL</li>
-              <li><strong>Database:</strong> Kompatibel dengan PostgreSQL / Supabase untuk multi-user enterprise</li>
-            </ul>
+            <div className="pt-1 flex flex-wrap gap-2 text-[10px] font-semibold text-slate-700">
+              <span className="px-2 py-0.5 bg-white border border-slate-200 rounded-md">Vercel: Vite Preset</span>
+              <span className="px-2 py-0.5 bg-white border border-slate-200 rounded-md">Netlify: dist/ 200</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Dedicated Interactive Deploy Guide Card */}
+        <div className="mt-4 p-5 bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl text-white shadow-md">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400">
+                <Cloud className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  Panduan Deploy ke Vercel & Netlify
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    Siap Pakai
+                  </span>
+                </h3>
+                <p className="text-[11px] text-slate-300">
+                  Langkah praktis mempublikasikan KEUANGAN CERDAS ke internet dengan domain gratis atau custom domain.
+                </p>
+              </div>
+            </div>
+
+            {/* Tab Switcher */}
+            <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl self-stretch sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setDeployTab('vercel')}
+                className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 ${
+                  deployTab === 'vercel'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span>▲ Vercel</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeployTab('netlify')}
+                className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 ${
+                  deployTab === 'netlify'
+                    ? 'bg-teal-600 text-white shadow-sm'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span>◆ Netlify</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            {/* Step 1: Git Repo */}
+            <div className="p-3.5 bg-white/5 rounded-xl border border-white/10 space-y-2">
+              <div className="flex items-center justify-between text-indigo-300 font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <Terminal className="w-3.5 h-3.5" /> 1. Push ke GitHub
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    copyToClipboard(
+                      'git init\ngit add .\ngit commit -m "Initial commit"\ngit branch -M main\ngit remote add origin https://github.com/USERNAME/keuangan-cerdas.git\ngit push -u origin main',
+                      'git'
+                    )
+                  }
+                  className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-2 py-0.5 rounded flex items-center gap-1 transition"
+                >
+                  {copiedKey === 'git' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  {copiedKey === 'git' ? 'Tersalin' : 'Salin Git Script'}
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-300">
+                Buat repositori di GitHub, lalu jalankan perintah terminal berikut di folder proyek:
+              </p>
+              <pre className="p-2.5 bg-black/40 rounded-lg text-[10px] font-mono text-emerald-300 overflow-x-auto leading-relaxed border border-white/5">
+git init{'\n'}git add .{'\n'}git commit -m "Deploy Keuangan Cerdas"{'\n'}git branch -M main{'\n'}git push -u origin main
+              </pre>
+            </div>
+
+            {/* Step 2: Platform Specific */}
+            <div className="p-3.5 bg-white/5 rounded-xl border border-white/10 space-y-2">
+              <div className="flex items-center justify-between text-indigo-300 font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5" /> 2. Import di {deployTab === 'vercel' ? 'Vercel' : 'Netlify'}
+                </span>
+                <span className="text-[10px] text-slate-400">Otomatis Terdeteksi</span>
+              </div>
+              {deployTab === 'vercel' ? (
+                <div className="space-y-1.5 text-[11px] text-slate-300">
+                  <p>1. Buka <strong>vercel.com</strong> &rarr; Add New Project &rarr; Import repo GitHub.</p>
+                  <p>2. Setelan otomatis menggunakan file <strong>vercel.json</strong>:</p>
+                  <ul className="list-disc list-inside space-y-0.5 pl-1 text-[10px] text-slate-300 font-mono">
+                    <li>Framework: Vite</li>
+                    <li>Build Command: npm run build</li>
+                    <li>Output Directory: dist</li>
+                  </ul>
+                  <p>3. Klik <strong>Deploy</strong>. Website aktif dalam 40 detik!</p>
+                </div>
+              ) : (
+                <div className="space-y-1.5 text-[11px] text-slate-300">
+                  <p>1. Buka <strong>netlify.com</strong> &rarr; Add new site &rarr; Import existing repo.</p>
+                  <p>2. Setelan otomatis menggunakan file <strong>netlify.toml</strong>:</p>
+                  <ul className="list-disc list-inside space-y-0.5 pl-1 text-[10px] text-slate-300 font-mono">
+                    <li>Build Command: npm run build</li>
+                    <li>Publish Directory: dist</li>
+                    <li>SPA Redirects: /* &rarr; /index.html 200</li>
+                  </ul>
+                  <p>3. Klik <strong>Deploy site</strong>. Siap online seketika!</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Critical Step 3: Firebase Authorized Domain */}
+          <div className="mt-3.5 p-3.5 bg-amber-500/10 border border-amber-400/30 rounded-xl flex items-start gap-3">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="text-[11px] space-y-1">
+              <span className="font-bold text-amber-200">
+                PENTING: Tambahkan Domain Produksi ke Firebase Authorized Domains
+              </span>
+              <p className="text-amber-100/90 leading-relaxed">
+                Agar Google OAuth & Gmail API dapat diakses tanpa hambatan di URL Vercel/Netlify Anda: Buka{' '}
+                <a
+                  href="https://console.firebase.google.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-white"
+                >
+                  Firebase Console
+                </a>{' '}
+                &rarr; <strong>Authentication</strong> &rarr; <strong>Settings</strong> &rarr;{' '}
+                <strong>Authorized domains</strong> &rarr; Masukkan domain Anda (misal:{' '}
+                <code className="bg-black/30 px-1 py-0.5 rounded text-[10px] font-mono">
+                  {deployTab === 'vercel' ? 'keuangan-cerdas.vercel.app' : 'keuangan-cerdas.netlify.app'}
+                </code>
+                ).
+              </p>
+            </div>
           </div>
         </div>
       </div>
