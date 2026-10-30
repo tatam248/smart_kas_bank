@@ -1,0 +1,8 @@
+{
+  "name": "KEUANGAN CERDAS",
+  "description": "Sistem pencatatan dan pengelolaan keuangan otomatis dari notifikasi email perbankan, jurnal transaksi, buku kas, dan laporan keuangan komprehensif.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
